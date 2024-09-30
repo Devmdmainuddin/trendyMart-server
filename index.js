@@ -34,6 +34,9 @@ async function run() {
     // await client.connect();
     const productCollection = client.db("trendyMart").collection("product")
     const userCollection = client.db("trendyMart").collection("users")
+    const categoryCollection = client.db("trendyMart").collection("category")
+    const subcategoryCollection = client.db("trendyMart").collection("subcategory")
+    const brandCollection = client.db("trendyMart").collection("brand")
 
     // auth related api
     app.post('/jwt', async (req, res) => {
@@ -63,8 +66,27 @@ async function run() {
         next();
       })
     }
+// ............category...................
 
   
+app.get('/category', async (req, res) => {
+  const result = await categoryCollection.find().toArray();
+  res.send(result)
+})
+
+app.post('/category', async (req, res) => {
+  const product = req.body;
+  const result = await categoryCollection.insertOne(product)
+  res.send(result);
+})
+app.delete('/category/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  const result = await categoryCollection.deleteOne(query)
+  res.send(result);
+
+})
+
     // .............................product.............................
     app.get('/products', async (req, res) => {
       const result = await productCollection.find().toArray();
