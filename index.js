@@ -37,6 +37,7 @@ async function run() {
     const categoryCollection = client.db("trendyMart").collection("category")
     const subcategoryCollection = client.db("trendyMart").collection("subcategory")
     const brandCollection = client.db("trendyMart").collection("brand")
+    const blogCollection = client.db("trendyMart").collection("blog")
 
     // auth related api
     app.post('/jwt', async (req, res) => {
@@ -87,6 +88,69 @@ app.delete('/category/:id', async (req, res) => {
 
 })
 
+// ............subcategory...................
+
+app.get('/subcategory', async (req, res) => {
+  const result = await subcategoryCollection.find().toArray();
+  res.send(result)
+})
+
+app.post('/subcategory', async (req, res) => {
+  const product = req.body;
+  const result = await subcategoryCollection.insertOne(product)
+  res.send(result);
+})
+app.delete('/subcategory/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  const result = await subcategoryCollection.deleteOne(query)
+  res.send(result);
+
+})
+// ............brand...................
+
+app.get('/brand', async (req, res) => {
+  const result = await brandCollection.find().toArray();
+  res.send(result)
+})
+
+app.post('/brand', async (req, res) => {
+  const product = req.body;
+  const result = await brandCollection.insertOne(product)
+  res.send(result);
+})
+app.delete('/brand/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  const result = await brandCollection.deleteOne(query)
+  res.send(result);
+
+})
+    // .............................blogs.............................
+    app.get('/blogs', async (req, res) => {
+      const result = await blogCollection.find().toArray();
+      res.send(result)
+    })
+    app.get('/blog/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await blogCollection.findOne(query)
+      res.send(result);
+    })
+    app.post('/blog', async (req, res) => {
+      const blog = req.body;
+      const result = await blogCollection.insertOne(blog)
+      res.send(result);
+    })
+    app.delete('/blog/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await blogCollection.deleteOne(query)
+      res.send(result);
+
+    })
+
+
     // .............................product.............................
     app.get('/products', async (req, res) => {
       const result = await productCollection.find().toArray();
@@ -110,6 +174,7 @@ app.delete('/category/:id', async (req, res) => {
       res.send(result);
 
     })
+
     // ...............................users...................................
 
     app.put('/user', async (req, res) => {
