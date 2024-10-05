@@ -9,7 +9,7 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:5174',
-   
+
   ],
   credentials: true
 }))
@@ -33,11 +33,13 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     const productCollection = client.db("trendyMart").collection("product")
+    const productReviewsCollection = client.db("trendyMart").collection("productReviews")
     const userCollection = client.db("trendyMart").collection("users")
     const categoryCollection = client.db("trendyMart").collection("category")
     const subcategoryCollection = client.db("trendyMart").collection("subcategory")
     const brandCollection = client.db("trendyMart").collection("brand")
     const blogCollection = client.db("trendyMart").collection("blog")
+    const blogReviewsCollection = client.db("trendyMart").collection("blogReviews")
 
     // auth related api
     app.post('/jwt', async (req, res) => {
@@ -67,65 +69,65 @@ async function run() {
         next();
       })
     }
-// ............category...................
+    // ............category...................
 
-  
-app.get('/category', async (req, res) => {
-  const result = await categoryCollection.find().toArray();
-  res.send(result)
-})
 
-app.post('/category', async (req, res) => {
-  const product = req.body;
-  const result = await categoryCollection.insertOne(product)
-  res.send(result);
-})
-app.delete('/category/:id', async (req, res) => {
-  const id = req.params.id;
-  const query = { _id: new ObjectId(id) }
-  const result = await categoryCollection.deleteOne(query)
-  res.send(result);
+    app.get('/category', async (req, res) => {
+      const result = await categoryCollection.find().toArray();
+      res.send(result)
+    })
 
-})
+    app.post('/category', async (req, res) => {
+      const product = req.body;
+      const result = await categoryCollection.insertOne(product)
+      res.send(result);
+    })
+    app.delete('/category/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await categoryCollection.deleteOne(query)
+      res.send(result);
 
-// ............subcategory...................
+    })
 
-app.get('/subcategory', async (req, res) => {
-  const result = await subcategoryCollection.find().toArray();
-  res.send(result)
-})
+    // ............subcategory...................
 
-app.post('/subcategory', async (req, res) => {
-  const product = req.body;
-  const result = await subcategoryCollection.insertOne(product)
-  res.send(result);
-})
-app.delete('/subcategory/:id', async (req, res) => {
-  const id = req.params.id;
-  const query = { _id: new ObjectId(id) }
-  const result = await subcategoryCollection.deleteOne(query)
-  res.send(result);
+    app.get('/subcategory', async (req, res) => {
+      const result = await subcategoryCollection.find().toArray();
+      res.send(result)
+    })
 
-})
-// ............brand...................
+    app.post('/subcategory', async (req, res) => {
+      const product = req.body;
+      const result = await subcategoryCollection.insertOne(product)
+      res.send(result);
+    })
+    app.delete('/subcategory/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await subcategoryCollection.deleteOne(query)
+      res.send(result);
 
-app.get('/brand', async (req, res) => {
-  const result = await brandCollection.find().toArray();
-  res.send(result)
-})
+    })
+    // ............brand...................
 
-app.post('/brand', async (req, res) => {
-  const product = req.body;
-  const result = await brandCollection.insertOne(product)
-  res.send(result);
-})
-app.delete('/brand/:id', async (req, res) => {
-  const id = req.params.id;
-  const query = { _id: new ObjectId(id) }
-  const result = await brandCollection.deleteOne(query)
-  res.send(result);
+    app.get('/brand', async (req, res) => {
+      const result = await brandCollection.find().toArray();
+      res.send(result)
+    })
 
-})
+    app.post('/brand', async (req, res) => {
+      const product = req.body;
+      const result = await brandCollection.insertOne(product)
+      res.send(result);
+    })
+    app.delete('/brand/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await brandCollection.deleteOne(query)
+      res.send(result);
+
+    })
     // .............................blogs.............................
     app.get('/blogs', async (req, res) => {
       const result = await blogCollection.find().toArray();
@@ -203,15 +205,24 @@ app.delete('/brand/:id', async (req, res) => {
       const result = await userCollection.updateOne(query, updateDoc, options)
       res.send(result)
     })
-    app.get('/users', async (req, res) => {
+    app.get('/user', async (req, res) => {
       const result = await userCollection.find().toArray()
       res.send(result)
     })
     app.get('/user/:email', async (req, res) => {
-      const email = req.params.email
-      const result = await userCollection.findOne({ email })
-      res.send(result)
-    })
+      const email = req.params.email;
+      // console.log("Requested Email:", email); // Log the email
+
+      const result = await userCollection.findOne({ email });
+      // console.log("User Data:", result); // Log the result
+
+      if (result) {
+        res.send(result);
+      } else {
+        res.status(404).send({ message: "User not found" });
+      }
+    });
+
 
     // .............................................
     // app.get('/filteruser', async (req, res) => {
@@ -238,17 +249,68 @@ app.delete('/brand/:id', async (req, res) => {
       res.send(result)
     })
 
-// .......................payments..........................
+   
+
+
+    // ..................productReviewsCollection .......................
+    app.get('/productReviews', async (req, res) => {
+      const result = await productReviewsCollection.find().toArray();
+      res.send(result)
+    })
+    app.get('/productReviews/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { 'productId': id }
+      const result = await productReviewsCollection.find(query).sort({ reviewDate: -1 }).toArray()
+      res.send(result)
+    })
+
+    app.post('/productReviews', async (req, res) => {
+      const querie = req.body;
+      const result = await productReviewsCollection.insertOne(querie)
+      res.send(result);
+    })
+
+    app.delete('/productReview/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await productReviewsCollection.deleteOne(query)
+      res.send(result);
+
+    })
+
+    // .........................................
+    app.get('/blogReviews', async (req, res) => {
+
+      const result = await blogReviewsCollection.find().toArray();
+      res.send(result)
+    })
+    app.get('/blogReviews/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { 'productId': id }
+      const result = await blogReviewsCollection.find(query).sort({ reviewDate: -1 }).toArray()
+      res.send(result)
+    })
+
+    app.post('/blogReviews', async (req, res) => {
+      const querie = req.body;
+      const result = await blogReviewsCollection.insertOne(querie)
+      res.send(result);
+    })
+
+    app.delete('/blogReview/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await blogReviewsCollection.deleteOne(query)
+      res.send(result);
+
+    })
+
+    // ........................................
+
+ // .......................payments..........................
 
 
 
-// .........................................
-
-
-// .........................................
-
-
-// ........................................
     // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
