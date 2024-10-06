@@ -9,6 +9,7 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:5174',
+    'https://trendymart-tm.web.app',
 
   ],
   credentials: true
@@ -169,7 +170,7 @@ async function run() {
       const result = await productCollection.insertOne(product)
       res.send(result);
     })
-    app.put('/updateproducts/:id', async (req, res) => {
+    app.put('/updateproducts/:id',verifyToken, async (req, res) => {
       const id = req.params.id;
       const product = req.body;
       const filter = { _id: new ObjectId(id) }
@@ -248,7 +249,7 @@ async function run() {
       }
     });
     // .............................................
-    app.get('/filteruser', async (req, res) => {
+    app.get('/filteruser',verifyToken, async (req, res) => {
       const filter = req.query.filter
       const sort = req.query.sort
       let query = {}
@@ -261,7 +262,7 @@ async function run() {
 
     // ...........................
 
-    app.patch('/users/:email', async (req, res) => {
+    app.patch('/users/:email',verifyToken, async (req, res) => {
       const email = req.params.email
       const user = req.body
       const query = { email }
@@ -272,7 +273,7 @@ async function run() {
       res.send(result)
     })
 
-    app.delete('/users/:id', async (req, res) => {
+    app.delete('/users/:id',verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await userCollection.deleteOne(query);
@@ -325,7 +326,7 @@ async function run() {
       res.send(result);
     })
 
-    app.delete('/blogReview/:id', async (req, res) => {
+    app.delete('/blogReview/:id',verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await blogReviewsCollection.deleteOne(query)
