@@ -169,6 +169,31 @@ async function run() {
       const result = await productCollection.insertOne(product)
       res.send(result);
     })
+    app.put('/updateproducts/:id', async (req, res) => {
+      const id = req.params.id;
+      const product = req.body;
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true };
+      const updatequerie = {
+        $set: {
+          title: product.title,
+          brand: product.brand,
+          price: product.price,
+          descaption: product.descaption,
+          category: product.category,
+          update: product.update,
+          availability_status: product.availability_status,
+          minimum_order_quantity: product.minimum_order_quantity,
+          return_policy: product.return_policy,
+          stock_levels: product.stock_levels,
+          discount: product.discount,
+          dimensions: product.dimensions,
+        }
+      };
+      const result = await productCollection.updateOne(filter, updatequerie, options);
+      res.send(result);
+    })
+    
     app.delete('/product/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
@@ -222,19 +247,17 @@ async function run() {
         res.status(404).send({ message: "User not found" });
       }
     });
-
-
     // .............................................
-    // app.get('/filteruser', async (req, res) => {
-    //   const filter = req.query.filter
-    //   const sort = req.query.sort
-    //   let query = {}
-    //   if (filter) query.role = filter
-    //   let options = {}
-    //   if (sort) options = { sort: { Timestamp: sort === 'asc' ? 1 : -1 } }
-    //   const result = await userCollection.find(query, options).toArray()
-    //   res.send(result)
-    // })
+    app.get('/filteruser', async (req, res) => {
+      const filter = req.query.filter
+      const sort = req.query.sort
+      let query = {}
+      if (filter) query.role = filter
+      let options = {}
+      if (sort) options = { sort: { Timestamp: sort === 'asc' ? 1 : -1 } }
+      const result = await userCollection.find(query, options).toArray()
+      res.send(result)
+    })
 
     // ...........................
 
@@ -249,7 +272,12 @@ async function run() {
       res.send(result)
     })
 
-   
+    app.delete('/users/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await userCollection.deleteOne(query);
+      res.send(result);
+    })
 
 
     // ..................productReviewsCollection .......................
@@ -286,7 +314,7 @@ async function run() {
     })
     app.get('/blogReviews/:id', async (req, res) => {
       const id = req.params.id;
-      const query = { 'productId': id }
+      const query = { 'blogId': id }
       const result = await blogReviewsCollection.find(query).sort({ reviewDate: -1 }).toArray()
       res.send(result)
     })
