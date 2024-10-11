@@ -1,7 +1,9 @@
+const qs = require('qs');
 const express = require('express');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const { default: axios } = require('axios');
 require('dotenv').config();
 const app = express()
 const port = process.env.PORT || 5000
@@ -16,7 +18,7 @@ app.use(cors({
 }))
 
 app.use(express.json());
-
+app.use(express.urlencoded())
 
 const uri = `mongodb+srv://${process.env.DB_NAME}:${process.env.DB_PASS}@cluster0.sk1ew0y.mongodb.net/?retryWrites=true&w=majority&appName=cluster0`;
 
@@ -41,7 +43,7 @@ async function run() {
     const brandCollection = client.db("trendyMart").collection("brand")
     const blogCollection = client.db("trendyMart").collection("blog")
     const blogReviewsCollection = client.db("trendyMart").collection("blogReviews")
-
+    const payment = client.db("trendyMart").collection("payment")
     // auth related api
     app.post('/jwt', async (req, res) => {
       const user = req.body;
@@ -170,7 +172,7 @@ async function run() {
       const result = await productCollection.insertOne(product)
       res.send(result);
     })
-    app.put('/updateproducts/:id',verifyToken, async (req, res) => {
+    app.put('/updateproducts/:id', verifyToken, async (req, res) => {
       const id = req.params.id;
       const product = req.body;
       const filter = { _id: new ObjectId(id) }
@@ -194,7 +196,7 @@ async function run() {
       const result = await productCollection.updateOne(filter, updatequerie, options);
       res.send(result);
     })
-    
+
     app.delete('/product/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
@@ -249,7 +251,7 @@ async function run() {
       }
     });
     // .............................................
-    app.get('/filteruser',verifyToken, async (req, res) => {
+    app.get('/filteruser', verifyToken, async (req, res) => {
       const filter = req.query.filter
       const sort = req.query.sort
       let query = {}
@@ -262,7 +264,7 @@ async function run() {
 
     // ...........................
 
-    app.patch('/users/:email',verifyToken, async (req, res) => {
+    app.patch('/users/:email', verifyToken, async (req, res) => {
       const email = req.params.email
       const user = req.body
       const query = { email }
@@ -273,7 +275,7 @@ async function run() {
       res.send(result)
     })
 
-    app.delete('/users/:id',verifyToken, async (req, res) => {
+    app.delete('/users/:id', verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await userCollection.deleteOne(query);
@@ -326,7 +328,7 @@ async function run() {
       res.send(result);
     })
 
-    app.delete('/blogReview/:id',verifyToken, async (req, res) => {
+    app.delete('/blogReview/:id', verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await blogReviewsCollection.deleteOne(query)
@@ -336,10 +338,109 @@ async function run() {
 
     // ........................................
 
- // .......................payments..........................
+    // .......................payments..........................
 
+    app.post('/create-payment', async (req, res) => {
+      const paymentinfo = req.body;
+      // Calculate total price
+      const totalPrice = paymentinfo?.cartItems?.reduce((total, item) => {
+        return total + item.product_price * item.product_quantity;
+      }, 0);
 
+      const trxId = new ObjectId().toString()
+      const initialdata = {
+        store_id: process.env.SSLCOMMERZ_STORE_ID,
+        store_passwd: process.env.SSLCOMMERZ_STORE_PASS,
+        total_amount: totalPrice,
+        currency: "BDT",
+        tran_id: trxId,
+        success_url: "http://localhost:5000/success-payment",
+        fail_url: "http://localhost:5000/fail",
+        cancel_url: "http://localhost:5000/cancel",
+        cus_name: paymentinfo.cus_name,
+        cus_email: paymentinfo.cus_email,
+        cus_add1: paymentinfo.cus_add,
+        cus_add2: "",
+        cus_city: paymentinfo.cus_city,
+        cus_state: "",
+        cus_postcode: paymentinfo.cus_postcode,
+        cus_country: paymentinfo.cus_country,
+        cus_phone: "01711111111",
+        cus_fax: "",
+        ship_name: "",
+        ship_add1: "",
+        ship_add2: "",
+        ship_city: "",
+        ship_state: "",
+        ship_postcode: "",
+        ship_country: "",
+        multi_card_name: "mobilebank,mastercard,visacard,amexcard,internetbank",
+        value_a: "",
+        value_b: "",
+        value_c: "",
+        value_d: ""
+      };
 
+      try {
+
+        const response = await axios({
+          method: "post",
+          url: "https://sandbox.sslcommerz.com/gwprocess/v3/api.php",
+          data: initialdata, // Encode the data
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+
+          }
+        });
+
+        const saveData = {
+          paymentId: trxId,
+          status: "Pending",
+          productID: paymentinfo.productID,
+          cus_phone: "01711111111",
+          cus_name: paymentinfo.cus_name,
+          cus_email: paymentinfo.cus_email,
+          cus_add1: paymentinfo.cus_add,
+          item: paymentinfo.cartItems,
+        }
+        const savePayment = await payment.insertOne(saveData)
+        if (savePayment) {
+          res.send({ paymentUrl: response.data.GatewayPageURL });
+        }
+
+      } catch (error) {
+        console.error("Payment error:", error);
+        res.status(500).send('Payment processing error');
+      }
+    });
+    app.post('/success-payment', async (req, res) => {
+      const successData = req.body;
+
+      if (successData.status !== "VALID") {
+        throw new Error("Unauthorized payment", "Invalid payment")
+      }
+      const query = {
+        paymentId: successData.tran_id,
+      }
+      const update = {
+        $set: {
+          status: "SUCCESS",
+
+        },
+
+      }
+      await payment.updateOne(query, update)
+      res.redirect('http://localhost:5173/orderComplete')
+
+    })
+    app.post('/fail', async (req, res) => {
+      res.redirect('http://localhost:5173/orderfail')
+    })
+    app.post('/cancel', async (req, res) => {
+      res.redirect('http://localhost:5173/orderCancle')
+    })
+
+    // .......................payments..........................
     // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
