@@ -351,12 +351,12 @@ async function run() {
       const initialdata = {
         store_id: process.env.SSLCOMMERZ_STORE_ID,
         store_passwd: process.env.SSLCOMMERZ_STORE_PASS,
-        total_amount: totalPrice,
+        total_amount: totalPrice+50,
         currency: "BDT",
         tran_id: trxId,
-        success_url: "http://localhost:5000/success-payment",
-        fail_url: "http://localhost:5000/fail",
-        cancel_url: "http://localhost:5000/cancel",
+        success_url: "https://trendy-mart-server.vercel.app/success-payment",
+        fail_url: "https://trendy-mart-server.vercel.app/fail",
+        cancel_url: "https://trendy-mart-server.vercel.app/cancel",
         cus_name: paymentinfo.cus_name,
         cus_email: paymentinfo.cus_email,
         cus_add1: paymentinfo.cus_add,
@@ -430,14 +430,14 @@ async function run() {
 
       }
       await payment.updateOne(query, update)
-      res.redirect('http://localhost:5173/orderComplete')
+      res.redirect('https://trendymart-tm.web.app/orderComplete')
 
     })
     app.post('/fail', async (req, res) => {
-      res.redirect('http://localhost:5173/orderfail')
+      res.redirect('https://trendymart-tm.web.app/orderfail')
     })
     app.post('/cancel', async (req, res) => {
-      res.redirect('http://localhost:5173/orderCancle')
+      res.redirect('https://trendymart-tm.web.app/orderCancle')
     })
 
     // .......................payments..........................
